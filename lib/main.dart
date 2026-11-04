@@ -10,10 +10,12 @@ void main() async {
     // Inicialização com opções de simulação para ambiente Web/Acadêmico
     await Firebase.initializeApp(
       options: const FirebaseOptions(
-        apiKey: "AIzaSyDummyKeyForUnipPresentation12345",
-        appId: "1:1234567890:web:abcdef123456",
-        messagingSenderId: "1234567890",
+        apiKey: "AIzaSyABxQg4Wkeph8ziPrl6aRfTHgG_ijCx9vU",
+        authDomain: "cantina-unip-app.firebaseapp.com",
         projectId: "cantina-unip-app",
+        storageBucket: "cantina-unip-app.firebasestorage.app",
+        messagingSenderId: "884168519458",
+        appId: "1:884168519458:web:7f45db6341eaefbc37bf7b"  
       ),
     );
   } else {

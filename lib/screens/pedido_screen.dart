@@ -2,9 +2,11 @@ import 'dart:convert';
 import 'package:flutter/material.dart';
 import 'package:http/http.dart' as http;
 import 'package:cloud_firestore/cloud_firestore.dart';
+import 'package:cantina_unip_app/screens/historico_screen.dart';
 
 class PedidoScreen extends StatefulWidget {
-  const PedidoScreen({super.key});
+  final String produtoSelecionado;
+  const PedidoScreen({super.key, required this.produtoSelecionado});
 
   @override
   State<PedidoScreen> createState() => _PedidoScreenState();
@@ -24,6 +26,7 @@ class _PedidoScreenState extends State<PedidoScreen> {
   bool _incluirCopo = false;
 
   bool _isLoadingCep = false;
+  bool _isLoadingPedido = false;
 
   // Função para consumir a API ViaCEP
   Future<void> _consultarCep(String cep) async {
@@ -68,15 +71,24 @@ class _PedidoScreenState extends State<PedidoScreen> {
   @override
   Widget build(BuildContext context) {
     return Scaffold(
-    appBar: AppBar(
-    title: const Text('Cantina UNIP', style: TextStyle(color: Colors.white)),
-    backgroundColor: const Color(0xFF003366), // Azul UNIP
-    iconTheme: const IconThemeData(color: Colors.white),
-    ),
+      appBar: AppBar(
+        title: const Text('Cantina UNIP - Finalizar Pedido', style: TextStyle(color: Colors.white)),
+        backgroundColor: const Color(0xFF003366), // Azul UNIP
+        iconTheme: const IconThemeData(color: Colors.white),
+      ),
       body: Padding(
         padding: const EdgeInsets.all(16.0),
         child: ListView(
           children: [
+            Container(
+              padding: const EdgeInsets.all(10),
+              color: const Color(0xFFFFCC00).withOpacity(0.2),
+              child: Text(
+                'Produto Selecionado: ${widget.produtoSelecionado}',
+                style: const TextStyle(fontWeight: FontWeight.bold, fontSize: 16, color: Color(0xFF003366)),
+              ),
+            ),
+            const SizedBox(height: 12),
             TextField(
               controller: _nomeController,
               decoration: const InputDecoration(labelText: 'Nome do Aluno / Cliente'),
@@ -146,13 +158,14 @@ class _PedidoScreenState extends State<PedidoScreen> {
             ),
             const SizedBox(height: 20),
             ElevatedButton(
-                style: ElevatedButton.styleFrom(
+              style: ElevatedButton.styleFrom(
                 backgroundColor: const Color(0xFFFFCC00), // Amarelo UNIP
                 padding: const EdgeInsets.symmetric(vertical: 14),
+                foregroundColor: Colors.black87,
               ),
-              onPressed: () async {
+              onPressed: _isLoadingPedido ? null : () async {
                 // Validação simples
-                if (_nomeController.text.isEmpty || _cepController.text.isEmpty) {
+                if (_nomeController.text.trim().isEmpty || _cepController.text.trim().isEmpty) {
                   ScaffoldMessenger.of(context).showSnackBar(
                     const SnackBar(
                       content: Text('Por favor, preencha o nome e o CEP!'),
@@ -162,19 +175,28 @@ class _PedidoScreenState extends State<PedidoScreen> {
                   return;
                 }
 
+                setState(() {
+                  _isLoadingPedido = true;
+                });
+
                 try {
+                  print('🚀 A enviar pedido para o Firebase Firestore...');
+
                   // Grava os dados na coleção 'pedidos' do Firebase Firestore
                   await FirebaseFirestore.instance.collection('pedidos').add({
-                    'nomeCliente': _nomeController.text,
-                    'cep': _cepController.text,
-                    'rua': _ruaController.text,
-                    'numero': _numeroController.text,
-                    'bairro': _bairroController.text,
-                    'cidade': _cidadeController.text,
+                    'nomeCliente': _nomeController.text.trim(),
+                    'produto': widget.produtoSelecionado,
+                    'cep': _cepController.text.trim(),
+                    'rua': _ruaController.text.trim(),
+                    'numero': _numeroController.text.trim(),
+                    'bairro': _bairroController.text.trim(),
+                    'cidade': _cidadeController.text.trim(),
                     'pagamento': _tipoPagamento,
                     'incluirCopo': _incluirCopo,
                     'dataPedido': FieldValue.serverTimestamp(),
                   });
+
+                  print('✅ Pedido gravado com sucesso no Firestore!');
 
                   if (!mounted) return;
 
@@ -185,21 +207,42 @@ class _PedidoScreenState extends State<PedidoScreen> {
                     ),
                   );
 
-                  // Retorna para a tela anterior após salvar
-                  Navigator.pop(context);
+                  // Navega diretamente para a tela de histórico para ver o pedido em tempo real
+                  Navigator.pushReplacement(
+                    context,
+                    MaterialPageRoute(builder: (context) => const HistoricoScreen()),
+                  );
+
                 } catch (e) {
+                  print('❌ Erro ao salvar no Firebase: $e');
+                  
+                  if (!mounted) return;
+                  
                   ScaffoldMessenger.of(context).showSnackBar(
                     SnackBar(
                       content: Text('Erro ao salvar no Firebase: $e'),
                       backgroundColor: Colors.red,
+                      duration: const Duration(seconds: 5),
                     ),
                   );
+                } finally {
+                  if (mounted) {
+                    setState(() {
+                      _isLoadingPedido = false;
+                    });
+                  }
                 }
               },
-              child: const Text(
-                'Finalizar Pedido',
-                style: TextStyle(fontSize: 16, color: Colors.black87),
-              ),
+              child: _isLoadingPedido
+                  ? const SizedBox(
+                      width: 20,
+                      height: 20,
+                      child: CircularProgressIndicator(strokeWidth: 2, color: Colors.black87),
+                    )
+                  : const Text(
+                      'Finalizar Pedido',
+                      style: TextStyle(fontSize: 16, fontWeight: FontWeight.bold, color: Colors.black87),
+                    ),
             ),
           ],
         ),

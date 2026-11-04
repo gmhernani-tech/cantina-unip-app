@@ -1,5 +1,6 @@
 import 'package:flutter/material.dart';
 import 'package:cantina_unip_app/screens/pedido_screen.dart';
+import 'package:cantina_unip_app/screens/catalogo_screen.dart';
 
 class HomeScreen extends StatelessWidget {
   const HomeScreen({super.key});
@@ -32,21 +33,21 @@ class HomeScreen extends StatelessWidget {
             ),
             const SizedBox(height: 20),
             ElevatedButton(
-              style: ElevatedButton.styleFrom(
+            style: ElevatedButton.styleFrom(
                 backgroundColor: const Color(0xFFFFCC00), // Amarelo UNIP
                 foregroundColor: Colors.black87,
                 padding: const EdgeInsets.symmetric(horizontal: 24, vertical: 12),
-              ),
-              onPressed: () {
+            ),
+            onPressed: () {
                 Navigator.push(
-                  context,
-                  MaterialPageRoute(builder: (context) => const PedidoScreen()),
+                context,
+                MaterialPageRoute(builder: (context) => const CatalogoScreen()), // <--- Deve abrir o Catálogo
                 );
-              },
-              child: const Text(
+            },
+            child: const Text(
                 'Fazer Pedido',
                 style: TextStyle(fontSize: 16, fontWeight: FontWeight.bold),
-              ),
+            ),
             ),
           ],
         ),
